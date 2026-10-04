@@ -1,0 +1,40 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${AZIR_DISPATCH_ROOT}/adapters/claude_code/hook.py\" --config \"${AZIR_DISPATCH_CONFIG}\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${AZIR_DISPATCH_ROOT}/adapters/claude_code/hook.py\" --config \"${AZIR_DISPATCH_CONFIG}\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${AZIR_DISPATCH_ROOT}/adapters/claude_code/hook.py\" --config \"${AZIR_DISPATCH_CONFIG}\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

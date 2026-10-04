@@ -1,0 +1,33 @@
+id = "azir-dispatch"
+name = "azir dispatch"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "JEV routing decisions for multi-agent dispatch, with a live terminal board."
+platforms = ["linux", "macos"]
+
+# 看板：读判断记录，显示派发、判断、完成和顾问调用。
+[[panes]]
+id = "board"
+title = "azir board"
+placement = "zoomed"
+command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/herdr/open.sh\" dashboard"]
+
+[[panes]]
+id = "board-split"
+title = "azir board"
+placement = "split"
+command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/herdr/open.sh\" dashboard"]
+
+# JEV 判断视图：当前这次判断的问题、各选项概率、把握和最近几次判断。
+[[panes]]
+id = "jev"
+title = "JEV decisions"
+placement = "split"
+command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/herdr/open.sh\" jev_view"]
+
+# 办公室：把每个 agent 画成工位上的人，上方显示工程经理、JEV 和顾问。默认只读，需要 Node 18 或更新版本。
+[[panes]]
+id = "office"
+title = "azir office"
+placement = "zoomed"
+command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/bin/azir-dispatch\" office"]

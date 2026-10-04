@@ -1,0 +1,43 @@
+# Managed by azir-dispatch setup; inherit uses executor settings.
+
+["roles"]
+
+["roles"."main"]
+"fallbacks" = [{ "executor" = "codex", "model" = "gpt-6.1-sol", "effort" = "high" }, { "executor" = "cursor-agent", "model" = "inherit", "effort" = "inherit" }, { "executor" = "gemini", "model" = "inherit", "effort" = "inherit" }, { "executor" = "grok", "model" = "inherit", "effort" = "inherit" }, { "executor" = "agy", "model" = "inherit", "effort" = "inherit" }]
+
+["roles"."main"."preferred"]
+"executor" = "claude"
+"model" = "claude-opus-5-5"
+"effort" = "high"
+
+["roles"."dev"]
+"fallbacks" = [{ "executor" = "claude", "model" = "claude-opus-5-5", "effort" = "high" }, { "executor" = "cursor-agent", "model" = "inherit", "effort" = "inherit" }, { "executor" = "gemini", "model" = "inherit", "effort" = "inherit" }, { "executor" = "grok", "model" = "inherit", "effort" = "inherit" }, { "executor" = "agy", "model" = "inherit", "effort" = "inherit" }]
+
+["roles"."dev"."preferred"]
+"executor" = "codex"
+"model" = "gpt-6.1-sol"
+"effort" = "high"
+
+["roles"."review"]
+"fallbacks" = [{ "executor" = "claude", "model" = "claude-opus-5-5", "effort" = "high" }, { "executor" = "cursor-agent", "model" = "inherit", "effort" = "inherit" }, { "executor" = "gemini", "model" = "inherit", "effort" = "inherit" }, { "executor" = "grok", "model" = "inherit", "effort" = "inherit" }, { "executor" = "agy", "model" = "inherit", "effort" = "inherit" }]
+
+["roles"."review"."preferred"]
+"executor" = "codex"
+"model" = "gpt-6.1-sol"
+"effort" = "high"
+
+["roles"."research"]
+"fallbacks" = [{ "executor" = "claude", "model" = "claude-opus-5-5", "effort" = "high" }, { "executor" = "cursor-agent", "model" = "inherit", "effort" = "inherit" }, { "executor" = "gemini", "model" = "inherit", "effort" = "inherit" }, { "executor" = "grok", "model" = "inherit", "effort" = "inherit" }, { "executor" = "agy", "model" = "inherit", "effort" = "inherit" }]
+
+["roles"."research"."preferred"]
+"executor" = "codex"
+"model" = "gpt-6.1-sol"
+"effort" = "high"
+
+["roles"."advisor"]
+"fallbacks" = []
+
+["roles"."advisor"."preferred"]
+"executor" = "gpt-pro"
+"model" = "gpt-pro"
+"effort" = "inherit"

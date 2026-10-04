@@ -1,0 +1,5 @@
+This directory contains Herdr Office, copied from https://github.com/michaellandi/herdr-office.
+
+Upstream baseline commit: 12ca55cf4de63223c61d5025b62a09ed23547a4b.
+The upstream MIT license and copyright notice are preserved in LICENSE.
+azir-dispatch additions are identified in git history and are not part of the upstream work.

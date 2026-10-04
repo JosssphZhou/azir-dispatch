@@ -1,0 +1,130 @@
+# Change executor names, model names, efforts, and defaults for your environment.
+
+[jev]
+url = "https://openrouter.ai/api/alpha/decisions"
+model = "typesafe/jev-1.13"
+timeout = 3
+# Optional command whose stdout is the API key. OPENROUTER_API_KEY takes precedence.
+# key_command = "your-key-helper read openrouter"
+
+[log]
+path = "~/.local/state/azir-dispatch/events.jsonl"
+
+[dispatch]
+default = "codex:gpt-6.1-sol:high"
+
+# Candidates by difficulty: a strong model for complex work, a cheap one for easy work,
+# and Claude for planning. Each criterion says when to pick it, so JEV can tell them apart.
+[dispatch.executors.codex.models]
+"gpt-6.1-sol" = ["high"]
+"gpt-6-luna" = ["medium"]
+
+[dispatch.executors.claude-code.models]
+"claude-opus-5-5" = ["high"]
+
+[points.dispatch]
+threshold = 0.7
+question = "当前任务应该派给谁？"
+instructions = "按任务难度选执行者和型号。只读统计、查找内容、改文档措辞、单文件小脚本交给便宜的 Luna。修改代码逻辑、开发新功能、修复故障、代码审查、跨模块改动交给 Sol 高推理。写规格、拆任务、架构方案、界面视觉设计和长文写作交给 Claude。"
+
+[points.dispatch.criteria]
+"codex:gpt-6.1-sol:high" = "复杂任务：修改代码逻辑、开发新功能、修复故障、代码审查、跨模块改动、需要跑测试验证的任务。"
+"codex:gpt-6-luna:medium" = "简单任务：只读统计、查找内容、整理清单、改文档措辞、单文件小脚本，不改代码逻辑，也不需要审查判断。"
+"claude-code:claude-opus-5-5:high" = "规划类任务：写规格、拆任务、架构方案、界面视觉设计、长文写作。"
+
+[points.next_step]
+threshold = 0.7
+question = "审查不通过或执行失败后，下一步是什么？"
+instructions = "可修复的问题按意见退修。原方案无效时重新设计。需要人决定时交回。"
+
+[points.next_step.criteria]
+continue = "按审查意见或报错修改后重新提交（常规退修）。"
+rethink = "换一种做法重新设计，局部修复无法解决。"
+stop = "缺少授权、规格冲突或外部阻塞，需要人决定。"
+
+[points.wrapup]
+threshold = 0.7
+question = "任务完成后如何处理执行窗格和工作树？"
+instructions = "审查通过且无需继续执行时关闭窗格。未合并的工作树保留供合并和复核。"
+
+[points.wrapup.criteria]
+close_and_clean = "通过审查、完成合并、无未提交内容且清理获授权时，关闭窗格并清理工作树。"
+close_keep = "通过审查，执行者无需继续，但工作树需保留供合并和复核时关闭窗格。"
+keep = "尚未通过审查、需要退修或仍有后续工作时保留窗格和工作树。"
+
+[skill]
+default = { development = "none", review = "none" }
+
+[skill.candidates]
+development = ["tdd", "diagnosing-bugs", "implement", "none"]
+review = ["code-review", "none"]
+
+[points.skill]
+threshold = 0.7
+question = "当前任务应使用哪个技能？"
+instructions = "按当前阶段选择技能。开发、诊断和只读审查使用各自的技能。"
+
+[points.skill.criteria]
+none = "没有适用的专门技能，按任务书执行。"
+
+# Extra regular expressions applied to state text before HTTP and preview logging.
+# [redact]
+# strict = true
+# max_state_chars = 4000
+# patterns = ["example-sensitive-value"]
+
+[dashboard]
+title = "AZIR WORKFLOW"
+# Label of the top box. Example: main_title = "Engineering manager", main_subtitle = "main agent behind it"
+main_title = "主会话"
+main_subtitle = ""
+log = "events.jsonl"
+advisor_dir = "sessions"
+retention_seconds = 60
+advisor_active_seconds = 20
+
+# Ordered preferences, automatically degraded to installed CLI tools.
+# Frontend dispatch follows the main role (Claude Opus preferred).
+# Managed by azir-dispatch setup; inherit uses executor settings.
+
+["roles"]
+
+["roles"."main"]
+"fallbacks" = [{ "executor" = "codex", "model" = "gpt-6.1-sol", "effort" = "high" }, { "executor" = "cursor-agent", "model" = "inherit", "effort" = "inherit" }, { "executor" = "gemini", "model" = "inherit", "effort" = "inherit" }, { "executor" = "grok", "model" = "inherit", "effort" = "inherit" }, { "executor" = "agy", "model" = "inherit", "effort" = "inherit" }]
+
+["roles"."main"."preferred"]
+"executor" = "claude"
+"model" = "claude-opus-5-5"
+"effort" = "high"
+
+["roles"."dev"]
+"fallbacks" = [{ "executor" = "claude", "model" = "claude-opus-5-5", "effort" = "high" }, { "executor" = "cursor-agent", "model" = "inherit", "effort" = "inherit" }, { "executor" = "gemini", "model" = "inherit", "effort" = "inherit" }, { "executor" = "grok", "model" = "inherit", "effort" = "inherit" }, { "executor" = "agy", "model" = "inherit", "effort" = "inherit" }]
+
+["roles"."dev"."preferred"]
+"executor" = "codex"
+"model" = "gpt-6.1-sol"
+"effort" = "high"
+
+["roles"."review"]
+"fallbacks" = [{ "executor" = "claude", "model" = "claude-opus-5-5", "effort" = "high" }, { "executor" = "cursor-agent", "model" = "inherit", "effort" = "inherit" }, { "executor" = "gemini", "model" = "inherit", "effort" = "inherit" }, { "executor" = "grok", "model" = "inherit", "effort" = "inherit" }, { "executor" = "agy", "model" = "inherit", "effort" = "inherit" }]
+
+["roles"."review"."preferred"]
+"executor" = "codex"
+"model" = "gpt-6.1-sol"
+"effort" = "high"
+
+["roles"."research"]
+"fallbacks" = [{ "executor" = "claude", "model" = "claude-opus-5-5", "effort" = "high" }, { "executor" = "cursor-agent", "model" = "inherit", "effort" = "inherit" }, { "executor" = "gemini", "model" = "inherit", "effort" = "inherit" }, { "executor" = "grok", "model" = "inherit", "effort" = "inherit" }, { "executor" = "agy", "model" = "inherit", "effort" = "inherit" }]
+
+["roles"."research"."preferred"]
+"executor" = "codex"
+"model" = "gpt-6.1-sol"
+"effort" = "high"
+
+["roles"."advisor"]
+"fallbacks" = []
+
+["roles"."advisor"."preferred"]
+"executor" = "gpt-pro"
+"model" = "gpt-pro"
+"effort" = "inherit"

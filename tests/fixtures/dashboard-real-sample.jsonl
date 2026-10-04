@@ -1,0 +1,3 @@
+{"type": "decision", "ts": "2026-10-01T12:47:02.081Z", "point": "dispatch", "answer": "codex-cli:gpt-6.1-sol:high", "confidence": 0.97, "source": "jev", "disposition": "apply"}
+{"type": "dispatch", "ts": "2026-10-01T12:47:09.988Z", "target": "example-task-1", "executor": "codex-cli", "model": "gpt-6.1-sol", "effort": "high"}
+{"type": "done", "ts": "2026-10-01T12:48:03.829Z", "target": "example-task-1"}

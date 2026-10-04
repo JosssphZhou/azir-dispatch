@@ -1,0 +1,35 @@
+# Change model IDs, efforts, routes and commands for your own environment.
+[jev]
+timeout = 3
+
+[log]
+path = "~/.local/state/azir-dispatch/events.jsonl"
+
+[dispatch]
+default = "codex:model-a:medium"
+
+[dispatch.executors.codex.models]
+model-a = ["low", "medium", "high"]
+
+[dispatch.executors.claude-code.models]
+model-b = ["high"]
+
+[skill]
+default = { development = "none", review = "none" }
+
+[skill.candidates]
+development = ["tdd", "diagnosing-bugs", "implement", "none"]
+review = ["code-review", "none"]
+
+[points.skill]
+threshold = 0.7
+
+[adapters.codex]
+command = "codex"
+default = "codex:model-a:medium"
+
+[adapters.claude_code]
+default = "claude-code:model-b:high"
+
+[adapters.claude_code.routes]
+"claude-code:model-b:high" = "worker-high"
