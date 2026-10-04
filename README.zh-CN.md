@@ -4,6 +4,12 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776ab.svg)](https://www.python.org/downloads/)
 
+用微信扫码加入「JEV WorkFlow 交流」微信群。
+
+<img src="docs/wechat-group-qr.jpg" alt="JEV WorkFlow 交流微信群二维码" width="360">
+
+此二维码在 2026 年 10 月 11 日前有效。
+
 **给多个 coding agent 分派任务，记录每一次派发，在终端里实时查看工作进展。**
 
 azir-dispatch 是一个 Python 工具，面向在 [herdr](https://herdr.dev) 里协调多个 coding agent 的开发者。它用 OpenRouter 提供的判断模型 [JEV](https://openrouter.ai/docs/guides/community/jev)，在你配置的选项里为每个任务选出 agent、模型和思考等级。每次派发都写进本机的 JSON Lines 记录，并在实时的终端调度图上显示。

@@ -4,6 +4,12 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776ab.svg)](https://www.python.org/downloads/)
 
+Scan the QR code with WeChat to join the “JEV WorkFlow 交流” group.
+
+<img src="docs/wechat-group-qr.jpg" alt="WeChat QR code for the JEV WorkFlow 交流 group" width="360">
+
+This QR code is valid before October 11, 2026.
+
 **Route tasks across coding agents, log every dispatch, and follow the work live in your terminal.**
 
 azir-dispatch is a Python tool for developers coordinating coding agents in [herdr](https://herdr.dev). It uses [JEV](https://openrouter.ai/docs/guides/community/jev), a decision model served by OpenRouter, to select an agent, model, and reasoning effort for each task from your configured options. Every dispatch is recorded in a local JSON Lines log and shown on a live terminal board.
