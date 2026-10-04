@@ -43,7 +43,7 @@ class BoardLayoutTests(unittest.TestCase):
     def test_empty_board_draws_five_idle_slots_and_return_box(self):
         frame = self.board().step(0)
         self.assertEqual(frame.text.count("空闲"), 5)
-        for word in ("6.1 Sol", "Luna", "Gemini", "Grok", "Opus", "回到工程经理", "等待判断", "主会话  ·  JEV"):
+        for word in ("6.1 Sol", "Luna", "Gemini", "Grok", "Opus", "回到主会话", "等待判断", "主会话  ·  JEV"):
             self.assertIn(word, frame.text)
         self.assertEqual(frame.canvas.border_errors(), [])
 
@@ -123,7 +123,7 @@ class BoardLayoutTests(unittest.TestCase):
                 frame = self.board(size).step(0)
                 self.assertEqual(frame.canvas.border_errors(), [])
                 self.assertEqual(frame.canvas.overflow_errors(), [])
-                self.assertIn("回到工程经理", frame.text)
+                self.assertIn("回到主会话", frame.text)
         for size in ((60, 20), (79, 35), (10, 3)):
             with self.subTest(size=size):
                 frame = self.board(size).step(0)

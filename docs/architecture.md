@@ -22,6 +22,8 @@ bin/azir-dispatch record <dispatch|done|failed|handback|advisor> --run-id <编�
 
 `skill` 的说明表可包含所有已配置范围的候选，当前范围只发送自己的候选说明。增删执行者或技能时同步检查说明表。内置 `continue` 表示按意见修改后重新提交，`rethink` 表示重新设计，`stop` 表示需要人决定。收尾说明区分通过审查、仍需执行、待合并和已授权清理。说明只是给 JEV 的判断依据，实际动作权限由调用方核验。把握线比较逻辑保持不变，等于把握线时采用答案。
 
+每个判断点可用 `[points.<判断点>].question` 写中文问题，用 `instructions` 写团队规则和当前判断背景，用 `[points.<判断点>.criteria]` 为选项写选择条件。参见 [配置示例](../examples/config.example.toml) 和本文上面几段的配置说明。说明表覆盖描述，候选仍由执行者或技能配置决定。派执行者不传 `--scope`；选技能才使用 `decide skill --scope development`，并配置对应范围的候选。
+
 问题、背景说明和选项说明与现状文字一起经过内置及 `[redact].patterns` 过滤。事件记录保存过滤后的问题和说明，过滤失败时不发送 HTTP。`max_state_chars` 仍只限制现状文字。
 
 `decide` 标准输出只有一行 JSON：`answer`、`jev_choice`、`confidence`、`threshold`、`source`、`disposition`、`cost`、`event_id`、`error`。`source` 只表示答案来源：`jev`、`rules` 或 `default`。把握达到线时 `source=jev, disposition=apply`，采用 JEV 选项；低于线时 `source=jev, disposition=handback, answer=null`，调用方交回发起派发的那一层自行决定；缺密钥或离线运行且记录成功时 `source=rules, disposition=apply`，采用配置规则默认答案；其他 JEV 故障且记录成功时 `source=default, disposition=apply`，调用方按默认答案继续。记录失败时 `source=default, disposition=handback, answer=null`，调用方不得继续派发。若无有效回答，`jev_choice` 为 `null`。阈值默认 0.7，可用 `[points.<判断点>].threshold` 单独设置，比较使用 `>=`。合法命令遇运行故障仍退出 0，并仅输出一行含错误类别的 JSON；参数或配置错误退出 2。
@@ -29,6 +31,23 @@ bin/azir-dispatch record <dispatch|done|failed|handback|advisor> --run-id <编�
 `[jev].mode="offline"` 或 `[points.<判断点>].enabled=false` 时，不读取 API 密钥、不执行 `[jev].key_command`，也不发送 HTTP 请求；采用默认答案并记录 `offline` 或 `disabled`。若过滤或记录失败，仍按相应错误处理。未设置模式或开关的旧配置保留在线、启用的行为。在线且启用时从 `OPENROUTER_API_KEY` 获取密钥；为空时才执行 `[jev].key_command`，将其标准输出作为密钥。标准库 HTTP 默认请求 `POST https://openrouter.ai/api/alpha/decisions`，模型为 `typesafe/jev-1.13`，整个判断默认有 3 秒预算。HTTP 不跟随重定向，任何非 2xx 状态都走默认。请求体包含 `model`、去密钥后的 `state` 和以判断点名为键的 `questions`，其中有 `type=choice`、`instructions`、`criteria`。根据 OpenRouter 的 [JEV 指南](https://openrouter.ai/docs/guides/community/jev) 和 [Decisions API 参考](https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-request)，这是纯 HTTP 客户端的入口；旧 `POST /api/v1/systemone` 是现有 TypeSafe SDK 换地址的入口。OpenRouter 文档给出的完整模型 ID 为 `typesafe/jev-1.13`，配置可改。响应读取 `answers.<判断点>.choice`、`confidence` 和 `usage.cost`。
 
 发送前会替换常见 API 密钥前缀、Bearer 令牌、`password=`／`token=`／`secret=` 值、PEM 私钥块和 JWT；中文紧邻凭据也会匹配。`[redact].patterns` 可增加正则；过滤在独立子进程里按判断截止时间运行，超时杀掉子进程并返回 `filter_timeout`。`strict=true` 时必须有额外规则，过滤失败或过滤后为空都会跳过 HTTP 并采用默认答案。过滤后按 `[redact].max_state_chars` 截断，默认 4000 字；截断事件记 `truncated=true`。判断记录只保存去密钥后现状文字的前 200 字。`record` 的文本字段及输出也经过相同过滤。此规则只覆盖指定的凭据形态；使用者须用额外正则去掉环境中需要隐藏的其他内容。
+
+## 四个判断点在使用中怎么生效
+
+包含四个判断点：
+
+1. 派发任务时，选择执行者、模型和思考等级。选项来自使用者的配置。
+2. 执行失败时，建议继续、换做法，还是停下交回主会话。
+3. 执行完成时，建议是否关闭窗格、清理工作区。
+4. 派发任务时，选技能。候选和默认答案按范围配置，`none` 表示不指定技能。
+
+派发判断的把握达到设定值时，适配器采用合法答案，低于设定值时交回发起派发的那一层。默认设定值为 0.7，每个判断点可以单独调整。失败和收尾的答案交给主会话处理，参考适配器不自动重试、关闭窗格或清理工作区。Claude Code 还需要配置子代理路由，才能应用对应的派发组合。
+
+遇到超时、缺少密钥或接口出错，采用该判断点的默认答案。核心默认给过滤、取密钥、HTTP 请求和判断记录共用 3 秒预算。这个预算不包含执行者完成任务的时间，也不是对进程启动和系统文件操作耗时的硬保证。
+
+判断记录写不进去时，这次判断不应用，交回发起派发的那一层。
+
+选技能与选执行者分别判断。核心通过 `decide skill --scope <范围>` 接收范围。两个参考适配器使用 `development` 范围，选中技能后在任务文字前加「用 <技能> 技能，」。选中 `none` 时保留任务文字，拿不准时交回发起派发的会话。配置示例见 [核心配置](../examples/config.example.toml)。
 
 ## 判断记录格式
 

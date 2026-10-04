@@ -171,8 +171,10 @@ def read_answers_json(path):
 
 
 def validate_answers(answers):
-    table(answers, ('version', 'defaults', 'executors', 'roles', 'jev', 'points', 'skills', 'privacy', 'hooks', 'dashboard'), 'answers')
+    table(answers, ('version', 'defaults', 'executors', 'roles', 'advisor', 'jev', 'points', 'skills', 'privacy', 'hooks', 'dashboard'), 'answers')
     validate_roles(answers.get('roles', {}))
+    from .advisor import settings
+    settings(answers)
     if type(answers.get('version')) is not int or answers['version'] != 1:
         raise SetupError('answers require version = 1')
     for key, allowed in [('defaults', SCOPES), ('jev', ('mode',)), ('skills', SCOPES),
@@ -212,8 +214,10 @@ def validate_answers(answers):
 
 
 def validate_config(config):
-    table(config, ('config_version', 'roles', 'jev', 'log', 'dispatch', 'points', 'skill', 'redact', 'dashboard', 'adapters', 'setup'), 'config')
+    table(config, ('config_version', 'roles', 'advisor', 'jev', 'log', 'dispatch', 'points', 'skill', 'redact', 'dashboard', 'adapters', 'setup'), 'config')
     validate_roles(config.get('roles', {}))
+    from .advisor import settings
+    settings(config)
     if type(config.get('config_version', 1)) is not int or config.get('config_version', 1) != 1:
         raise SetupError('unsupported config version')
     for key, allowed in [
@@ -362,10 +366,16 @@ def candidate(existing, answers, detected, proposals, inventory):
                       setup=dict(privacy={item['key']: True for item in proposals}, skill_sources={scope: {} for scope in SCOPES}))
     else:
         validate_config(config)
+    from .advisor import DEFAULTS
+    config.setdefault('advisor', copy.deepcopy(DEFAULTS))
+    config['advisor'].update(answers.get('advisor', {}))
     if 'roles' in answers:
         config['roles'] = copy.deepcopy(answers['roles'])
     elif not existing and not any(key in answers for key in ('defaults', 'executors')):
         config['roles'] = copy.deepcopy(DEFAULT_ROLES)
+    if 'advisor' in answers:
+        config.setdefault('roles', copy.deepcopy(DEFAULT_ROLES))['advisor'] = dict(
+            preferred=dict(executor='chatgpt-pro', model='GPT Pro', effort='pro'), fallbacks=[])
     if 'roles' in config:
         config = apply_roles(config, {item['command']: item['found'] for item in detected['executors']})
     config['config_version'] = 1

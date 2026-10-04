@@ -53,7 +53,12 @@ def private_directory(path):
     if current.is_symlink() or not current.is_dir():
         raise SetupError('unsafe state directory')
     for directory in reversed(missing):
-        directory.mkdir(mode=0o700)
+        try:
+            directory.mkdir(mode=0o700)
+        except FileExistsError:
+            # Another process created it between the check and mkdir; accept only a real directory.
+            if directory.is_symlink() or not directory.is_dir():
+                raise SetupError('unsafe state directory') from None
     return path
 
 

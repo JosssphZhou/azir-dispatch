@@ -77,7 +77,7 @@ main_subtitle = ""
 
 仅配置 Codex 候选时，Claude Code 协议预检使用临时的继承设置，并报告 `claude_code_configured=false`；不会把该候选写入配置。这种配置不能安装 Claude Code hooks，需先添加对应候选。
 
-一次真实 JEV 测试需要在线配置与 `--allow-online-test`，在本地提交后执行，不重试。只发固定的无意义测试文字；测试结果单独报告，不因失败回滚本地配置。接收方是 OpenRouter 及配置中的 JEV 模型；正常使用发送的字段见 README 的隐私说明。
+一次真实 JEV 测试需要在线配置与 `--allow-online-test`，在本地提交后执行，不重试。只发固定的无意义测试文字；测试结果单独报告，不因失败回滚本地配置。接收方是 OpenRouter 及配置中的 JEV 模型；正常使用发送的字段见 [隐私说明](privacy.md)。
 
 有变更时才建立私有状态目录、锁和备份。新目录权限 0700，配置、hooks、安装记录、恢复记录和备份权限 0600。原字节备份可能包含旧文件已有的秘密，应按敏感文件保存。setup 不取得或保存新的 JEV 密钥。
 
@@ -100,3 +100,27 @@ setup 答案增加 `jev.mode = "rules"`，原 offline/online 仍支持。无 Ope
 ## 视频演示入口
 
 `python3 bin/azir-dispatch demo` 回放仓库内 `azir_dispatch/demo/video-run.jsonl`，不派发任务、不读取真实顾问会话。`--check` 做非交互逐帧验证，`--once` 打印单帧，支持 --config、--speed、--seconds。演示素材缺失时仅输出“演示事件文件缺失”并退出 1；演示素材随仓库提供。
+
+## 手工配置和接入 JEV
+
+以下命令都在克隆后的仓库根目录运行。先复制 [配置示例](../examples/config.example.toml)，用公开的示例任务做一次无密钥判断：
+
+```sh
+cp examples/config.example.toml my-config.toml
+printf '%s\n' 'Review this public example task.' > task.md
+OPENROUTER_API_KEY= bin/azir-dispatch decide dispatch \
+  --config my-config.toml --state-file task.md --log events.jsonl
+```
+
+命令输出一行 JSON：`answer="codex:gpt-6.1-sol:high"`、`source="rules"`、`disposition="apply"`、`error="missing_api_key"`，并在当前目录的 `events.jsonl` 写入判断记录。这一步只判断，不启动 Codex。示例没有启用 `[jev].key_command`，密钥为空时不发 HTTP 请求；如果自己的配置启用了取密钥命令，需先停用它才能做同样的离线核对。
+
+实际接 JEV 时，通过自己的运行环境提供 `OPENROUTER_API_KEY`，去掉命令开头的 `OPENROUTER_API_KEY=` 后再运行 `decide`。不要把密钥写进配置文件或提交到 Git。核心配置的 `[jev]`、`[dispatch]`、`[points]` 和可选的 `[redact]` 分别设置服务、候选组合、判断依据与把握线、过滤规则。示例按难度分三档候选：复杂任务用 `gpt-6.1-sol`，简单任务用便宜的 `gpt-6-luna`，规划类用 `claude-opus-5-5`。真实派发前，把候选、默认答案和路由中的型号一起改成你安装的 CLI 支持的型号及思考等级。
+
+配置同时包含 `[dashboard]`，控制标题、记录路径、执行者保留时间和顾问高亮时间。读取刚才的判断记录：
+
+```sh
+python3 -m azir_dispatch.dashboard --config my-config.toml \
+  --log events.jsonl --no-advisor-scan
+```
+
+按 `q` 退出。这里显式指定本地记录并关闭顾问扫描。实时模式还支持 `AZIR_DISPATCH_LOG` 和 `[dashboard].log`；不指定路径时默认读 `~/.local/state/azir-dispatch/events.jsonl`。默认顾问目录为 `~/.claude/projects/`，示例配置将它改为 `sessions`。

@@ -31,7 +31,8 @@ def main(argv=None):
     subcommands = parser.add_subparsers(dest="command", required=True)
     from .setup import add_parser, run as setup_run
     add_parser(subcommands)
-    from . import doctor, demo
+    from . import doctor, demo, advisor
+    advisor.add_parser(subcommands)
     doctor.add_parser(subcommands)
     demo.add_parser(subcommands)
     decide_parser = subcommands.add_parser("decide")
@@ -60,6 +61,8 @@ def main(argv=None):
         return setup_run(args)
     if args.command == 'doctor':
         return doctor.run(args)
+    if args.command == 'advisor':
+        return advisor.run(args)
     if args.command == 'demo':
         return demo.run(args)
 

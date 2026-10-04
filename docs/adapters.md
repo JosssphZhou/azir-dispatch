@@ -93,6 +93,71 @@ bin/azir-dispatch-codex run --config my-config.toml \
 
 可传 `--run-id` 指定本次派发编号，`--task-id` 把跨重试的同一任务串起来。默认各生成一份编号。后续判断以 `caused_by` 指向完成或失败事件，任务内派发和完成共享 `run_id`、`task_id`。
 
+## 手工安装和离线核对
+
+下面的 Codex 核对用到 `task.md`，先按 [手工配置和接入 JEV](setup.md#手工配置和接入-jev) 在仓库根目录生成它。
+
+以下步骤在仓库内新建 `demo-project`，核对接入过程。`mkdir demo-project` 如果提示目录已存在，请换一个新目录名，避免覆盖已有项目。两个适配器仍只需 Python 标准库。
+
+```sh
+cp examples/adapters.example.toml my-adapters.toml
+export AZIR_DISPATCH_ROOT="$PWD"
+export AZIR_DISPATCH_CONFIG="$PWD/my-adapters.toml"
+export AZIR_DISPATCH_LOG="$PWD/events.jsonl"
+mkdir demo-project
+```
+
+### 离线核对 Claude Code 适配器
+
+在新项目中安装 hooks 和与示例路由对应的子代理：
+
+```sh
+mkdir -p demo-project/.claude/agents
+cp examples/claude-code-settings.example.json demo-project/.claude/settings.json
+cat > demo-project/.claude/agents/worker-high.md <<'AGENT'
+---
+name: worker-high
+description: Implements a delegated development task
+model: model-b
+effort: high
+background: false
+---
+Implement the supplied task and report the outcome.
+AGENT
+```
+
+已有项目须将示例的 `hooks` 合入 `.claude/settings.json`，保留已有 hooks。真实使用前，同时替换配置及代理定义中的占位型号，并按任务需要授予代理工具权限。上面的三个环境变量须保留在启动 Claude Code 的 shell 中。
+
+直接给 hook 送一个示例工具调用，核对默认路由；这一步不启动 Claude Code 或子代理：
+
+```sh
+printf '%s\n' '{"hook_event_name":"PreToolUse","session_id":"demo","tool_use_id":"demo-call","tool_name":"Agent","tool_input":{"subagent_type":"general-purpose","prompt":"Review this public example task."}}' | \
+  OPENROUTER_API_KEY= python3 "$AZIR_DISPATCH_ROOT/adapters/claude_code/hook.py" \
+    --config "$AZIR_DISPATCH_CONFIG"
+```
+
+输出的 `hookSpecificOutput.updatedInput` 应包含 `subagent_type="worker-high"` 和 `model="model-b"`；记录中派发判断为 `source=rules`。完成型号配置并安装、登录 Claude Code 后，在 `demo-project` 中用 `CLAUDE_CODE_FORK_SUBAGENT=0 CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1 claude` 启动前台会话。完成或失败的 hooks 将后续建议交给主会话。
+
+### 离线核对 Codex 适配器
+
+先用一个只回显任务的临时命令核对包装器，无须安装 Codex，也不会请求模型：
+
+```sh
+cat > demo-project/offline-codex <<'PY'
+#!/usr/bin/env python3
+import sys
+print("offline task received: " + sys.stdin.read().strip())
+PY
+chmod +x demo-project/offline-codex
+OPENROUTER_API_KEY= bin/azir-dispatch-codex run --config my-adapters.toml \
+  --task-file task.md --cwd demo-project --log events.jsonl \
+  --codex-command "$PWD/demo-project/offline-codex"
+```
+
+终端应回显任务并给出 `wrapup: keep (source=rules)` 建议，记录中包含派发和完成事件。这验证包装器的接入过程。真实使用时，先安装、登录 Codex 并替换占位型号，然后省略 `--codex-command`，让包装器运行 `[adapters.codex].command` 指定的 Codex。
+
+适配器采用合法的默认派发答案时也会启动执行工具，因此仅清空 JEV 密钥不会阻止真实 Codex 执行。以上离线核对同时使用假命令。完整接入、后台结果报告和顾问记录导出见本文的 Claude Code 和 Codex 两节。
+
 ## 给自己的 agent 写适配器
 
 参考 `adapters/codex/runner.py` 的 `run_task` 或 `adapters/claude_code/hook.py` 的 `handle_hook`：读取任务，限制当前运行工具能接收的候选，调用 `decide`，按结果运行或交回，最后记录结果并返回下一步建议。

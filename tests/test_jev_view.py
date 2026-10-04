@@ -58,7 +58,7 @@ class JevViewTests(unittest.TestCase):
                 frame = view.step(5.0)
                 conclusion_row = [row for row in frame.text.splitlines() if row.strip()][-1]
                 self.assertEqual(conclusion_row.strip(), "→ 规则")
-                for other in ("直接执行", "建议", "交回工程经理", "走默认"):
+                for other in ("直接执行", "建议", "交回主会话", "走默认"):
                     self.assertNotIn(other, frame.text)
                 marked = next(row for row in frame.text.splitlines() if "▸" in row)
                 self.assertIn(option_label(sample["answer"]), marked)
@@ -117,7 +117,7 @@ class JevViewTests(unittest.TestCase):
         wrapups = [
             (event(point="wrapup", options={"close_and_clean": "清理", "close_keep": "留工作区", "keep": "保留"},
                    probabilities={"close_and_clean": 0.03, "close_keep": 0.67, "keep": 0.3},
-                   confidence=0.52, threshold=0.8, disposition="handback"), "交回工程经理"),
+                   confidence=0.52, threshold=0.8, disposition="handback"), "交回主会话"),
             (event(point="wrapup", options={"close_and_clean": "清理", "close_keep": "留工作区", "keep": "保留"},
                    probabilities={"close_and_clean": 0.01, "close_keep": 0.89, "keep": 0.1},
                    confidence=0.83, threshold=0.8), "建议"),

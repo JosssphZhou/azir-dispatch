@@ -792,7 +792,7 @@ class Board:
     def _connectors(self, layout):
         c = self.canvas
         mcx, jcx, rcx = layout["mcx"], layout["jcx"], layout["rcx"]
-        # 工程经理 → JEV
+        # 主会话 → JEV
         y = layout["mgr_row"]
         if mcx == jcx:
             c.put(mcx, y, "┆", LINE)
@@ -800,7 +800,7 @@ class Board:
             c.put(min(mcx, jcx), y, "┄" * abs(jcx - mcx), LINE)
             c.put(mcx, y, "╰" if jcx > mcx else "╯", LINE)
             c.put(jcx, y, "╮" if jcx > mcx else "╭", LINE)
-        # 工程经理 → 顾问
+        # 主会话 → 顾问
         mgr, adv = layout["mgr"], layout["adv"]
         acx = (adv[0] + adv[2]) // 2
         my = (mgr[1] + mgr[3]) // 2
@@ -815,7 +815,7 @@ class Board:
         for x in xs[1:-1]:
             c.put(x, y, "┬", LINE)
         c.put(jcx, y, "┼" if jcx in xs[1:-1] else "┴", LINE)
-        # 执行者 → 回到工程经理
+        # 执行者 → 回到主会话
         for x in xs:
             c.put(x, layout["card_row"], "┆", LINE)
         y = layout["join_row"]
@@ -1131,7 +1131,7 @@ class Board:
 
         ret = layout["ret"]
         c.box(*ret, mix(LINE, BRIGHT, 0.5 if self.packet == "sub_ret" else 0))
-        c.center((ret[0] + ret[2]) // 2, ret[1] + 1, "回到工程经理  ·  审查  ·  验证", GRAY)
+        c.center((ret[0] + ret[2]) // 2, ret[1] + 1, "回到主会话  ·  审查  ·  验证", GRAY)
 
         if self.packet:
             self._draw_packet(c, self._path(self.packet, self.packet_target), now)

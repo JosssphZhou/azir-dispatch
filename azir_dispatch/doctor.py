@@ -52,9 +52,11 @@ def snapshot(config=None, *, steps=None, probe_versions=True, refresh=True):
                           repo='ok' if (ROOT / 'bin/azir-dispatch').is_file() else 'missing')
     detected_steps.update(steps or {})
     role_hints = {name: HINTS['models'] for name in ('main', 'dev', 'review', 'research')}
-    role_hints['advisor'] = '顾问可选；有 GPT Pro 接入命令时在 roles.advisor 配置。'
+    from .advisor import available
+    advisor_ready = available(config, probe=True)
+    role_hints['advisor'] = '顾问可选；按 skills/setup/SKILL.md 配置 ego lite、登录 ChatGPT 并测试。'
     return update_state(refresh=refresh, steps=detected_steps, agents=agents, keys=keys,
-                        roles=resolve_roles(config, agents), tools=tools,
+                        roles=resolve_roles(config, agents, advisor_ready=advisor_ready), tools=tools,
                         jev_mode='jev' if keys['OPENROUTER_API_KEY'] and config.get('jev', {}).get('mode') not in ('offline', 'rules') else 'rules',
                         hints={**HINTS, **role_hints, 'environment': '安装并登录至少一个 agent CLI。',
                                'repo': '克隆本仓库后在根目录运行 python3 bin/azir-dispatch doctor。',

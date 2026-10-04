@@ -255,7 +255,7 @@ class View:
         if event.get("source") == "rules":
             return "→ 规则"
         if event.get("disposition") == "handback":
-            return "→ 交回工程经理"
+            return "→ 交回主会话"
         if event.get("point") in ("dispatch", "skill"):
             return "→ 直接执行"
         return "→ 建议"

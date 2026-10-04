@@ -124,7 +124,7 @@ class DashboardTests(unittest.TestCase):
                 self.assertTrue(all(len(row) == width for row in frame.canvas.cells))
                 self.assertEqual(frame.canvas.border_errors(), [])
                 self.assertEqual(frame.canvas.overflow_errors(), [])
-                # 最小尺寸也按原型画出底部「回到工程经理」框和退出提示
+                # 最小尺寸也按原型画出底部「回到主会话」框和退出提示
                 self.assertIn("审查  ·  验证", frame.text)
                 self.assertIn("q 退出", frame.text)
 

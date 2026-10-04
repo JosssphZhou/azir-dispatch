@@ -125,6 +125,12 @@ advisor_active_seconds = 20
 "fallbacks" = []
 
 ["roles"."advisor"."preferred"]
-"executor" = "gpt-pro"
-"model" = "gpt-pro"
-"effort" = "inherit"
+"executor" = "chatgpt-pro"
+"model" = "GPT Pro"
+"effort" = "pro"
+
+# Optional macOS browser advisor; enable after following docs/advisor.md.
+[advisor]
+provider = "chatgpt-pro"
+enabled = false
+weekly_limit = 50

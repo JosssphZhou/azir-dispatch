@@ -139,7 +139,7 @@ python3 bin/azir-dispatch record done --run-id "$RUN_ID" --config "$AZIR_DISPATC
 python3 bin/azir-dispatch doctor --config "$AZIR_DISPATCH_CONFIG" --json
 ```
 
-阻塞或失败时用 `record failed` 的同样字段记录实际原因，报告未完成，不能用假 CLI 或样例事件冒充真实派发。最后报告配置路径、选中角色、规则或 JEV 模式、看图及真实派发结果、仍缺少的可选项。验收方会让 Codex、Grok、AGy 分别只读此引导从零执行。
+阻塞或失败时用 `record failed` 的同样字段记录实际原因，报告未完成，不能用假 CLI 或样例事件冒充真实派发。最后报告配置路径、选中角色、规则或 JEV 模式、看图及真实派发结果、仍缺少的可选项。
 
 ## 必须由用户完成的步骤
 
@@ -148,4 +148,35 @@ python3 bin/azir-dispatch doctor --config "$AZIR_DISPATCH_CONFIG" --json
 - 可选在线 JEV：先说明过滤后的任务会发往 OpenRouter；已有该动作授权后使用 `{"version":1,"jev":{"mode":"online"}}` 作为 setup 答案。没有 OPENROUTER_API_KEY 时自动采用规则答案。在线测试另需明确授权，使用 `--allow-online-test`。
 - Claude Code 项目 hooks：默认跳过；需要时按 [配置说明](../../docs/setup.md) 指定单一项目，已有写入授权后使用 `--allow-hooks <同一项目>`。
 
-setup 支持答案文件和标准输入，不等待终端问答。已有登录可沿用；账号确实未登录时才交给用户。非交互分支也要交付调度图的真实终端记录和真实执行结果。
+setup 支持答案文件和标准输入，不等待终端问答。已有登录可沿用；账号确实未登录时才交给用户。终端附着、登录与可选密钥配置之外，其余步骤由任意能执行 shell 的 agent 完成。非交互分支也要交付调度图的真实终端记录和真实执行结果。
+
+## 配置 GPT Pro 顾问（可选）
+
+先确认用户有没有可使用 Pro 档的 ChatGPT 订阅。没有就跳过，顾问显示“未配置，可选”。Linux、Windows 和 WSL 也直接跳过；当前 ego lite 仅支持 macOS，不影响前面六步。
+
+macOS 用户有订阅时，打开 [ego lite 官网](https://lite.ego.app/) 的[免费下载](https://lite.ego.app/download?auto=1)。已有应用时直接使用，用户在应用中本人完成首次引导并登录 `https://chatgpt.com/`。引导会注册 ego-browser 命令（通常在 `~/.local/bin`）及技能；必要时将该目录加入 PATH。不读取账号密码、Cookie 或登录令牌。登录和系统权限提示由用户处理，完成前暂停相关步骤。
+
+用户已授权配置顾问时，使用非交互答案字段保存可选配置。在线提问前说明连通测试会向 ChatGPT 发送一句短问题并消耗一次订阅额度；已有测试授权时直接继续，否则取得该动作授权后再发。
+
+```sh
+printf '%s\n' '{"version":1,"advisor":{"provider":"chatgpt-pro","enabled":true,"weekly_limit":50}}' | python3 bin/azir-dispatch setup --answers-json - --apply
+export AZIR_DISPATCH_CONFIG="$HOME/.config/azir-dispatch/config.toml"
+command -v ego-browser
+python3 bin/azir-dispatch advisor open --config "$AZIR_DISPATCH_CONFIG"
+```
+
+保存输出 `space` 为 `SPACE_ID`。按 [GPT Pro 顾问技能](../advisor-chatgpt-pro/SKILL.md) 核对登录和选择 Pro 档，再执行：
+
+```sh
+python3 bin/azir-dispatch advisor check --space "$SPACE_ID" --config "$AZIR_DISPATCH_CONFIG"
+PROMPT_FILE=$(mktemp)
+printf '%s\n' '用一句话回答：1+1 等于几。直接给出答案。' > "$PROMPT_FILE"
+python3 skills/advisor-chatgpt-pro/scripts/pro-send.py --space "$SPACE_ID" --config "$AZIR_DISPATCH_CONFIG" --prompt-file "$PROMPT_FILE"
+python3 skills/advisor-chatgpt-pro/scripts/pro-wait.py --space "$SPACE_ID" --config "$AZIR_DISPATCH_CONFIG"
+python3 bin/azir-dispatch doctor --config "$AZIR_DISPATCH_CONFIG" --json
+python3 skills/advisor-chatgpt-pro/scripts/pro_usage.py status --config "$AZIR_DISPATCH_CONFIG"
+```
+
+成功条件：拿到实际答案 2、顾问角色 `status=ok`、用量增加一次、事件包含 `type=advisor` 与 `source=chatgpt-pro`，真实看板顾问栏亮起并计数。完成后按顾问技能关闭本次任务空间，处理本次临时提示词文件。缺浏览器、未登录或测试失败时报告“未配置，可选”并继续其他安装步骤；发送状态不确定时先只读核对，不能自动重发。
+
+非交互模式使用上述 `advisor` 答案字段，`enabled=false` 表示跳过。保存配置本身不触发网页外发，agent 需在获授权后显式执行连通测试。每周上限、数据范围及关闭方法见 [顾问说明](../../docs/advisor.md)。

@@ -7,7 +7,7 @@ import shutil
 AGENTS = ('claude', 'codex', 'cursor-agent', 'gemini', 'grok', 'agy')
 KEYS = ('OPENROUTER_API_KEY', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY')
 EXECUTOR_COMMANDS = {'claude-code': 'claude', **{name: name for name in AGENTS},
-                     'gpt-pro': 'gpt-pro'}
+                     'gpt-pro': 'gpt-pro', 'chatgpt-pro': 'ego-browser'}
 
 
 def command_path(command):
@@ -35,7 +35,7 @@ DEFAULT_ROLES = {
     'dev': dict(preferred=CODEX, fallbacks=[CLAUDE, *OTHERS]),
     'review': dict(preferred=CODEX, fallbacks=[CLAUDE, *OTHERS]),
     'research': dict(preferred=CODEX, fallbacks=[CLAUDE, *OTHERS]),
-    'advisor': dict(preferred=option('gpt-pro', 'gpt-pro'), fallbacks=[]),
+    'advisor': dict(preferred=option('chatgpt-pro', 'GPT Pro', 'pro'), fallbacks=[]),
 }
 
 
@@ -54,7 +54,7 @@ def validate_roles(roles):
                 raise ValueError('invalid role combination')
 
 
-def resolve_roles(config=None, agents=None):
+def resolve_roles(config=None, agents=None, *, advisor_ready=None):
     configured = (config or {}).get('roles', {})
     validate_roles(configured)
     agents = discover() if agents is None else agents
@@ -65,6 +65,9 @@ def resolve_roles(config=None, agents=None):
         for index, item in enumerate(choices):
             command = EXECUTOR_COMMANDS[item['executor']]
             available = agents.get(command, False) if command in AGENTS else bool(command_path(command))
+            if item['executor'] == 'chatgpt-pro':
+                from .advisor import available as advisor_available
+                available = advisor_available(config or {}) if advisor_ready is None else advisor_ready
             if available:
                 result[role] = dict(status='ok', **item, fallback=index != 0)
                 break
