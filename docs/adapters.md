@@ -97,7 +97,7 @@ bin/azir-dispatch-codex run --config my-config.toml \
 
 参考 `adapters/codex/runner.py` 的 `run_task` 或 `adapters/claude_code/hook.py` 的 `handle_hook`：读取任务，限制当前运行工具能接收的候选，调用 `decide`，按结果运行或交回，最后记录结果并返回下一步建议。
 
-可以复用 `adapters/common.py` 的 `load_settings`、`executor_config`、`ask`、`record` 和 `hint`。`record` 过滤写入的文字，判断调用仍由核心完成过滤。任务摘要先对完整任务应用核心过滤器及额外规则，再取前 200 字。完整任务仍原样交给执行工具。所有长度限制都在过滤之后执行。不要把内部对象或完整会话直接写入事件。测试放在命令输入输出和事件文件处，外部模型服务用回环地址的假 HTTP 服务，执行工具用临时假命令。参考三个适配器测试文件，运行 `python3 -m unittest discover -s tests -q`。
+可以复用 `adapters/common.py` 的 `load_settings`、`executor_config`、`ask`、`record` 和 `hint`。`record` 过滤写入的文字，判断调用仍由核心完成过滤。任务摘要先对完整任务应用核心过滤器及额外规则，再取前 200 字。完整任务仍原样交给执行工具。所有长度限制都在过滤之后执行。不要把内部对象或完整会话直接写入事件。测试放在命令输入输出和事件文件处，外部模型服务用回环地址的假 HTTP 服务，执行工具用临时假命令。参考三个适配器测试文件，运行 `python3 -m pytest -q -p no:cacheprovider tests`。公共测试入口在收集阶段及每个测试开始时隔离家目录、状态、日志和配置，并在会话结束时检查真实家目录的状态是否变化。
 
 ## 加一个新判断点
 
