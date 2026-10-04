@@ -71,7 +71,7 @@ test('draws 24-bit counters, special desks, JEV options, confidence, and spark h
   assert.ok(plain.some((row) => row.includes('工作中 1')));
   assert.ok(plain.some((row) => row.includes('完成 1')));
   assert.ok(plain.some((row) => row.includes('未知 1')));
-  assert.ok(plain.some((row) => row.includes('工程经理')));
+  assert.ok(plain.some((row) => row.includes('执行协调')));
   assert.ok(plain.some((row) => row.includes('JEV')));
   assert.ok(plain.some((row) => row.includes('顾问')));
   assert.ok(plain.some((row) => row.includes('直接执行')));

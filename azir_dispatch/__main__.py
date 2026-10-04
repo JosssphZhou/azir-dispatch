@@ -31,9 +31,10 @@ def main(argv=None):
     subcommands = parser.add_subparsers(dest="command", required=True)
     from .setup import add_parser, run as setup_run
     add_parser(subcommands)
-    from . import doctor, demo, advisor
+    from . import doctor, demo, advisor, roles_screen
     advisor.add_parser(subcommands)
     doctor.add_parser(subcommands)
+    roles_screen.add_parser(subcommands)
     demo.add_parser(subcommands)
     decide_parser = subcommands.add_parser("decide")
     decide_parser.add_argument("point", choices=["dispatch", "next_step", "wrapup", "skill"])
@@ -65,6 +66,8 @@ def main(argv=None):
         return advisor.run(args)
     if args.command == 'demo':
         return demo.run(args)
+    if args.command == 'roles':
+        return roles_screen.run(args)
 
     try:
         from .roles import apply_roles

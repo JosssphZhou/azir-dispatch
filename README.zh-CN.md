@@ -65,6 +65,10 @@ JEV 的把握达到设定值（默认 0.7，每个判断点可以单独调整）
 
 角色分为主会话、开发、审查和调研四个。每个角色用哪个 agent 和模型由你配置；只装了一个 agent 命令行工具时，四个角色共用它。
 
+运行 `azir-dispatch roles`，可以查看每个角色用哪个 agent、模型和强度，用一句话的真实调用测试，并保存修改。
+
+![azir-dispatch 角色和模型画面](docs/roles-screen.png)
+
 **可选顾问。** 顾问用你自己的 ChatGPT Pro 订阅给出第二意见，需要安装 ego lite 浏览器，详见 [docs/advisor.md](docs/advisor.md)。
 
 ## herdr 插件

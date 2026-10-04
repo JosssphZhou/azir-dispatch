@@ -25,7 +25,7 @@ title = "JEV decisions"
 placement = "split"
 command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/herdr/open.sh\" jev_view"]
 
-# 办公室：把每个 agent 画成工位上的人，上方显示工程经理、JEV 和顾问。默认只读，需要 Node 18 或更新版本。
+# 办公室：把每个 agent 画成工位上的人，上方显示执行协调、JEV 和顾问。默认只读，需要 Node 18 或更新版本。
 [[panes]]
 id = "office"
 title = "azir office"

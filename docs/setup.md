@@ -85,7 +85,7 @@ main_subtitle = ""
 
 ## 环境检测和安装进度
 
-运行 `python3 bin/azir-dispatch doctor` 查看逐项清单，`--json` 输出相同的安装状态。检测 claude、codex、cursor-agent、gemini、grok、agy，Grok 同时查 PATH 与 `~/.grok/bin/grok`。herdr、git、python3 显示版本；无法识别版本时仅报告命令存在。三个 API 密钥变量仅检测名称是否存在，探测版本的子进程不接收这些密钥。
+运行 `python3 bin/azir-dispatch doctor` 查看逐项清单，`--json` 输出相同的安装状态。检测 claude、codex、cursor-agent、gemini、grok、agy，Grok 同时查 PATH 与 `~/.grok/bin/grok`。herdr、git、python3 显示版本；无法识别版本时仅报告命令存在。三个 API 密钥变量仅检测名称是否存在，探测版本的子进程不接收这些密钥。必需项（python3、git、herdr、至少一个执行者 CLI）缺失时显示红色叉。可选项（三个密钥、顾问、多出来的执行者）缺失时显示灰色「可选」。界面文字默认英文，`LC_ALL` 或 `LANG` 以 `zh` 开头时显示中文。
 
 每次 doctor 都原子更新 `$AZIR_DISPATCH_STATE_DIR/setup-state.json`，默认目录为 `~/.local/state/azir-dispatch`。状态文件包含 version、updated_at、steps、agents、keys、roles、jev_mode、hints 和 tools。models 在保存配置后更新；board 在 demo 验证成功后更新；first_dispatch 在记录真实派发后更新。doctor 保留后续步骤的进度。配置和适配器默认从同一状态目录选择事件文件。
 
@@ -96,6 +96,46 @@ main_subtitle = ""
 配置中有 roles 时，运行时按可用 CLI 重新选角色，开发与审查默认采用 dev/review，frontend 采用 main，缺项按有序备选降级。仅安装 Claude 或 Codex 时，四个必需角色都用该 CLI；无 GPT Pro 时 advisor 为 optional_unconfigured。命令存在不证明账号或型号可用。角色表优先于 dispatch.defaults；不使用角色表的旧配置继续按原默认组合执行。
 
 setup 答案增加 `jev.mode = "rules"`，原 offline/online 仍支持。无 OpenRouter 密钥时采用配置默认答案，事件 source=rules；next_step 和 wrapup 可在对应 points 表里设置 default，答案必须属于该判断点候选。配置为 offline/rules 时不执行取密钥命令；在线 JEV 的其他故障仍以 source=default 走原降级路径。事件增加 jev_mode 字段，规则判断为 rules。
+
+## 查看和修改角色
+
+运行 `azir-dispatch roles` 打开角色画面。画面不是终端或终端小于 78×17 时，命令打印一次静态表或给出提示。
+
+画面有五列：
+
+| 列 | 内容 |
+|---|---|
+| ROLE | main、dev、review、research、advisor 五个角色 |
+| EXECUTOR | 该角色首选的执行者 |
+| MODEL | 型号。`inherit` 表示用该 CLI 自己的默认型号 |
+| EFFORT | 思考强度。`inherit` 表示用该 CLI 自己的默认强度 |
+| STATUS | `verified`（已测试通过）、`not tested`、测试失败的原因、`optional`（可选，未配置）、`connected`（顾问已连接）或 `→ 退到某执行者` |
+
+按键如下：
+
+| 按键 | 作用 |
+|---|---|
+| ↑ ↓ | 选角色 |
+| ← → | 换执行者，型号和强度重置为 `inherit` |
+| `m` | 选型号，列表末尾可以手填 |
+| `e` | 循环切换强度 |
+| `t` | 测试选中的角色 |
+| `s` | 保存到 `config.toml` |
+| `q` | 退出。有未保存的修改时再按一次 `q` 才退出 |
+
+首选执行者的 CLI 没装时，那一行变暗，状态写「→ 退到」加备选执行者的名字，运行时按角色表的有序备选降级。
+
+型号列表读各 CLI 自己的命令：`codex debug models`（同时给出每个型号支持的强度）、`agy models`、`cursor-agent --list-models`、`grok models`。Claude Code 没有列表命令，提供 `opus`、`sonnet`、`haiku` 三个别名。Gemini CLI 没有列表命令，只有 `inherit` 和手填。列表读取失败时按没有列表处理。结果缓存在状态目录的 `model-catalog.json`，10 分钟内不重读。没有配置过的角色，默认型号不在列表里时自动改成 `inherit`。已保存的型号不在列表里时状态标红，不改写。
+
+`t` 对选中角色的 CLI 发一句话，让它回复一个词，会花该账号的一点额度，所以发送前要先按 `y` 确认。失败时画面给出具体原因：没登录、型号不存在、命令不存在、超时。每次结果按「执行者:型号:强度」写入状态目录的 `role-checks.json`，状态随之变成已验证或失败。顾问是浏览器，不是 CLI，不能用 `t`，用 `azir-dispatch advisor check` 检查。
+
+给脚本和 agent 用的形式：
+
+- `azir-dispatch roles --json` 输出各角色的执行者、型号、强度、状态、失败原因、备选，以及各 CLI 可选的型号（`available`）。
+- `azir-dispatch roles --set 角色=执行者:型号:强度` 修改并保存，可以重复多次，例如 `--set dev=codex:gpt-6.1-sol:high`。型号不在该 CLI 的列表里时，整批都不写入并列出可选型号。命令打印每个角色改前和改后的组合。
+- `--config-dir` 指定 `config.toml` 所在目录，默认 `~/.config/azir-dispatch`。
+
+保存和 `setup --apply` 走同一条路径，`dispatch.defaults` 和适配器默认值随角色表一起更新。
 
 ## 视频演示入口
 

@@ -114,7 +114,7 @@ export function ingestEvents(state, events, { now = Date.now(), initial = false 
         state.receipt = `${worker?.task || '任务'} · ${result}`;
         state.managerText = state.receipt;
         if (worker) { worker.wrapup = decision; worker.result = result; }
-        if (!initial) queueFlight(state, 'jev', 'manager', worker?.targetName || '工程经理', event.flightMs || 3200, decision.readyAt ?? now,
+        if (!initial) queueFlight(state, 'jev', 'manager', worker?.targetName || '执行协调', event.flightMs || 3200, decision.readyAt ?? now,
           { task: worker?.task || '收尾判断', result, zone: modelZone(worker?.model) });
       } else if (!initial) queueFlight(state, 'manager', 'jev', 'JEV', event.flightMs || 2400, now,
         { task: event.question || '判断任务' });
@@ -142,10 +142,10 @@ export function ingestEvents(state, events, { now = Date.now(), initial = false 
       if (!initial) queueFlight(state, 'worker', 'jev', worker?.targetName || displayTarget(event), event.flightMs || 2400, now,
         { task: worker?.task || '完成任务', zone: modelZone(worker?.model) });
     } else if (event.type === 'handback') {
-      state.managerText = `收回判断 · ${event.reason || '需要工程经理处理'}`;
-      if (!initial) queueFlight(state, 'jev', 'manager', '工程经理', event.flightMs || 620, now);
+      state.managerText = `收回判断 · ${event.reason || '需要执行协调处理'}`;
+      if (!initial) queueFlight(state, 'jev', 'manager', '执行协调', event.flightMs || 620, now);
     } else if (event.type === 'hop') {
-      // 流程里的一段飞行：老板 → 主 Agent → 工程经理，执行者 → 审查 → 工程经理 → 主 Agent。
+      // 流程里的一段飞行：你 → 主会话 → 执行协调，执行者 → 审查 → 执行协调 → 主会话。
       state.says = { ...(state.says || {}), ...Object.fromEntries(Object.entries(event.say || {}).map(([k, v]) => [k, sanitize(v)])) };
       if (event.manager_text) state.managerText = sanitize(event.manager_text);
       const worker = event.target ? workerFor(state, event) : null;

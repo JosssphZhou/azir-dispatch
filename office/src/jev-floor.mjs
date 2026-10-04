@@ -1,6 +1,6 @@
-// azir 办公室的 JEV 视图：工程经理在上，JEV 判断在中间，执行工位按型号分五区。
+// azir 办公室的 JEV 视图：执行协调在上，JEV 判断在中间，执行工位按型号分五区。
 // 派发判断先转一次老虎机，停在 JEV 选中的型号上，再显示概率条。
-// 任务卡沿固定连线飞行：工程经理 → JEV → 型号区，完成后沿原路飞回。
+// 任务卡沿固定连线飞行：执行协调 → JEV → 型号区，完成后沿原路飞回。
 // 画布按终端格子排版，中文占两格；不输出任何从记录里读到的控制字符。
 import { width, truncate, stripAnsi } from './text.mjs';
 import { modelZone, officeWorkers, SLOT_MS } from './azir-events.mjs';
@@ -185,11 +185,11 @@ function topBar(c, view, workers, state) {
   }
 }
 
-/* ---------------------------------------------------------------- 老板、主 Agent、工程经理、审查 */
+/* ---------------------------------------------------------------- 你、主会话、执行协调、审查 */
 
 const isManager = (p) => /^mgr-/i.test(p.agentName || '');
 const isReviewer = (p) => /review/i.test(p.agentName || '');
-const managerName = (p) => `${clean(p.agentName).replace(/^mgr-/i, '') || '项目'} 工程经理`;
+const managerName = (p) => `${clean(p.agentName).replace(/^mgr-/i, '') || '项目'} 执行协调`;
 const reviewerZone = (p) => (/claude/i.test(`${p.kind} ${p.agentName}`) ? 'opus' : 'sol');
 const reviewerName = (p) => (reviewerZone(p) === 'opus' ? 'Claude 审查' : 'Sol 审查');
 
@@ -216,13 +216,13 @@ function nodeBox(c, box, { title, line, tint, icon, lit = 0, dim = false }) {
 function drawPeople(c, L, state, crew, lit, now) {
   const says = state.says || {};
   const advisorOn = state.advisor && now < state.advisor.until;
-  nodeBox(c, L.boss, { title: '老板 · 周瑟夫', line: says.boss || '—', tint: GOLD, lit: lit.has('boss') ? 1 : 0 });
-  nodeBox(c, L.main, { title: '主 Agent · 主对话', line: says.main || '空闲', tint: ICON.opus.from, icon: 'opus', lit: lit.has('main') ? 1 : 0 });
+  nodeBox(c, L.boss, { title: '你', line: says.boss || '—', tint: GOLD, lit: lit.has('boss') ? 1 : 0 });
+  nodeBox(c, L.main, { title: '主会话', line: says.main || '空闲', tint: ICON.opus.from, icon: 'opus', lit: lit.has('main') ? 1 : 0 });
   nodeBox(c, L.advisor, { title: '顾问 · Fable', line: advisorOn ? state.advisor.session : '空闲', tint: '#7ad7ff', lit: advisorOn ? 1 : 0, dim: !advisorOn });
   L.mgrs.forEach((box, i) => {
     const p = crew.managers[i];
     const line = i === 0 ? state.managerText : p?.title || STATUS_NAME[p?.status] || '空闲';
-    nodeBox(c, box, { title: p ? managerName(p) : '工程经理', line, tint: P.manager, lit: i === 0 && lit.has('manager') ? 1 : 0, dim: i > 0 });
+    nodeBox(c, box, { title: p ? managerName(p) : '执行协调', line, tint: P.manager, lit: i === 0 && lit.has('manager') ? 1 : 0, dim: i > 0 });
   });
   if (!L.review) return;
   L.reviews.forEach((box, i) => {
@@ -303,8 +303,8 @@ function jevBox(c, L, state, now) {
   cx += c.put(cx, row, `把握线 ${threshold.toFixed(2)}`, P.soft, { bg: P.panel }) + 3;
   const chosen = d.jev_choice ?? d.answer;
   const verdict = d.point === 'wrapup'
-    ? (d.disposition === 'handback' || chosen === 'keep' ? '→ 交回工程经理' : '→ 直接收尾')
-    : d.disposition === 'handback' ? '→ 把握不足，交回工程经理' : `→ 派给 ${optionLabel(chosen)} · 直接执行`;
+    ? (d.disposition === 'handback' || chosen === 'keep' ? '→ 交回执行协调' : '→ 直接收尾')
+    : d.disposition === 'handback' ? '→ 把握不足，交回执行协调' : `→ 派给 ${optionLabel(chosen)} · 直接执行`;
   const vt = d.disposition === 'handback' || chosen === 'keep' ? P.handback : modelZone(chosen) === 'other' ? P.close : P[modelZone(chosen)];
   c.put(cx, row, verdict, vt, { limit: x + w - 2 - cx, bg: P.panel, bold: true });
 }
@@ -573,7 +573,7 @@ function row(cols, y, h, widths, gap = 4) {
 }
 
 function layout(cols, rows, zoneKeys, active, crew) {
-  // 40 行以上画完整流程：老板一排、工程经理一排、JEV、型号区、审查一排；不到 40 行时前两排折成一行，审查排省掉。
+  // 40 行以上画完整流程：你一排、执行协调一排、JEV、型号区、审查一排；不到 40 行时前两排折成一行，审查排省掉。
   const full = rows >= 40;
   const tight = rows < 34;
   const lineH = full ? 3 : 1;
@@ -641,7 +641,7 @@ function routes(L) {
       const from = z.folded ? L.zoneY + 2 : L.deskY + L.deskH;
       return drop(`review-${zoneKey}-${i}`, z.center, from, box.cx, L.review.y - 1, wireY);
     };
-    // 回程：审查方框顶边 → 审查排上方那条横线 → 最左一列向上 → 工程经理方框左边。
+    // 回程：审查方框顶边 → 审查排上方那条横线 → 最左一列向上 → 执行协调方框左边。
     R.rail = (i) => {
       const box = L.reviews[i] || L.reviews[0];
       const my = m.y + Math.floor(m.h / 2);
@@ -757,7 +757,7 @@ export function renderJevFrame(view) {
     // 太小时不画工位图，只列出关键信息。
     const d = state.lastDecision;
     const list = [
-      `工程经理：${state.managerText}`,
+      `执行协调：${state.managerText}`,
       d ? `JEV：${d.question || ''} · 把握 ${pct(d.confidence)}` : 'JEV：等待任务',
       ...workers.map((w) => `${ZONES[modelZone(w.model)].short} · ${w.task || ''} · ${STATUS_NAME[w.status] || ''} · ${pct(w.confidence)}`),
     ];

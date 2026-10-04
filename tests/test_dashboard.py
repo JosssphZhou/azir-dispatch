@@ -403,9 +403,9 @@ class DashboardTests(unittest.TestCase):
             path = Path(tmp) / "default.jsonl"
             path.write_text(json.dumps({"type": "decision", "question": "下一步", "answer": "继续",
                                         "confidence": 0.3, "source": "default", "disposition": "apply"}, ensure_ascii=False) + "\n", encoding="utf-8")
-            frame = Board(log=path, replay=True, title="我的工作流", main_title="工程经理",
-                          main_subtitle="背后还有主 Agent").step(0)
-            for text in ("我的工作流", "工程经理", "背后还有主 Agent", "JEV 不可用，走默认"):
+            frame = Board(log=path, replay=True, title="我的工作流", main_title="我的协调",
+                          main_subtitle="背后还有主会话").step(0)
+            for text in ("我的工作流", "我的协调", "背后还有主会话", "JEV 不可用，走默认"):
                 self.assertIn(text, frame.text)
 
     def test_completed_hidden_worker_becomes_visible(self):

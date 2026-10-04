@@ -16,6 +16,7 @@ from .setup_config import (ROOT, SetupError, candidate, environment, privacy_pro
                            read_answers, read_answers_json, skill_inventory, toml_bytes, clean_environment)
 from .setup_io import Change, commit, guarded, unfinished, digest, directory_path
 from .setup_state import state_directory
+from .ui_text import tr
 from .redact import redact_state
 from .filtering import FilterError, FilterTimeout, filter_value
 from .setup_hooks import hook_fragment, plan_hooks
@@ -31,6 +32,7 @@ def add_parser(commands):
     parser.add_argument('--apply', action='store_true', help='apply local configuration')
     parser.add_argument('--allow-hooks', metavar='PROJECT', help='authorize hooks in one project')
     parser.add_argument('--allow-online-test', action='store_true', help='authorize one online JEV test')
+    parser.add_argument('--json', action='store_true', help='print the full result as JSON (the default when stdout is not a terminal)')
 
 
 def verify(config):
@@ -280,7 +282,18 @@ def describe_changes(changes, proposals, apply_authorized, authorized_hooks, exi
 def run(args):
     answer_source = args.answers or args.answers_json
     interactive = sys.stdin.isatty() and sys.stdout.isatty() and not answer_source
+    # A person at a terminal gets a readable summary; pipes, agents and --json get the JSON.
+    human = sys.stdout.isatty() and not getattr(args, 'json', False)
     result = None
+
+    def emit(value, config=None, path=None):
+        if human and config is not None:
+            from .setup_summary import summary
+            print(summary(value, config, path))
+        elif human:
+            print(tr('setup.status.needs_confirmation'))
+        else:
+            print(json.dumps(value, ensure_ascii=False))
     try:
         state = state_directory()
         unfinished(state)
@@ -328,7 +341,7 @@ def run(args):
                 print(change['diff'])
             if not args.apply and not yes('Apply local configuration? 保存本地配置?'):
                 result['status'] = 'needs_confirmation'
-                print(json.dumps(result, ensure_ascii=False))
+                emit(result, config, path)
                 return 0
             args.apply = True
             if hooks and not args.allow_hooks:
@@ -342,7 +355,7 @@ def run(args):
         if args.apply:
             # For noninteractive application, the reviewed plan is also visible on stderr
             # before writes; stdout remains exactly one machine-readable result.
-            if not interactive:
+            if not interactive and not human:
                 print(json.dumps(result, ensure_ascii=False), file=sys.stderr)
             result['verification'] = verify(config)
             result['unverified'] = ['online_jev', 'real_hook_session', 'executor_account_and_model']
@@ -367,10 +380,10 @@ def run(args):
         elif args.allow_online_test or args.allow_hooks:
             result['status'] = 'needs_confirmation'
             result['summary'] = 'Application requires --apply; the plan has not been submitted.'
-        print(json.dumps(result, ensure_ascii=False))
+        emit(result, config, path)
         return 0
     except (EOFError, KeyboardInterrupt):
-        print(json.dumps(dict(status='needs_confirmation', reason='cancelled', unverified=['online_jev', 'real_hook_session', 'executor_account_and_model'])))
+        emit(dict(status='needs_confirmation', reason='cancelled', unverified=['online_jev', 'real_hook_session', 'executor_account_and_model']))
         return 0
     except (SetupError, OSError, ValueError, TypeError, UnicodeError, subprocess.SubprocessError) as exc:
         message = str(exc) if isinstance(exc, SetupError) else 'cannot read, validate or commit configuration'
@@ -378,5 +391,6 @@ def run(args):
         failure = dict(status='failed', error=message)
         if isinstance(exc, SetupError):
             failure.update(exc.details)
-        print(json.dumps(failure, ensure_ascii=False))
+        if not human:
+            print(json.dumps(failure, ensure_ascii=False))
         return 2

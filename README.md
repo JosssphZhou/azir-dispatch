@@ -65,6 +65,10 @@ The `next_step` and `wrapup` responses are recommendations for the main session.
 
 The four roles are main session, development, review, and research. You choose an agent and model for each role; if only one agent CLI is installed, all four roles share it.
 
+Run `azir-dispatch roles` to review each role's agent, model, and effort, test it with one short call, and save changes.
+
+![The azir-dispatch roles screen](docs/roles-screen.png)
+
 **Optional advisor.** The advisor uses your own ChatGPT Pro subscription to provide a second opinion and requires the ego lite browser. See [docs/advisor.md](docs/advisor.md).
 
 ## herdr plugin

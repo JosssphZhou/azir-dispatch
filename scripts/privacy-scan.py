@@ -15,6 +15,8 @@ import tempfile
 
 PUBLIC_ACCOUNTS = {"JosssphZhou"}
 PUBLIC_ACCOUNT = "JosssphZhou"
+# Extra commit author names to accept, comma separated, for example on a private mirror.
+EXTRA_AUTHORS_ENV = "AZIR_PRIVACY_EXTRA_AUTHORS"
 PUBLIC_EMAIL = "260232027+" + PUBLIC_ACCOUNT + "@users.noreply.github.com"
 ALLOWED_EMAILS = {PUBLIC_EMAIL, "noreply@anthropic.com"}
 EMAIL = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
@@ -110,7 +112,13 @@ def scan_worktree(repo, snapshot, decoded):
     return findings
 
 
+def allowed_author_names():
+    extra = {name.strip() for name in os.environ.get(EXTRA_AUTHORS_ENV, "").split(",") if name.strip()}
+    return {*PUBLIC_ACCOUNTS, *extra}
+
+
 def scan_history(repo, decoded):
+    allowed_authors = allowed_author_names()
     commits = git(repo, "rev-list", "--all").decode("ascii").splitlines()
     seen_blobs = set()
     findings = 0
@@ -120,7 +128,7 @@ def scan_history(repo, decoded):
         for label, name, email in [("作者", author, author_email),
                                    ("提交者", committer, committer_email)]:
             findings += inspect_text(f"历史/{commit}/{label}", name + b"\n" + email)
-            if name.decode("utf-8", "replace") not in (*PUBLIC_ACCOUNTS, "周瑟夫"):
+            if name.decode("utf-8", "replace") not in allowed_authors:
                 print(f"命中 历史/{commit}/{label}:1 [非公开署名]")
                 findings += 1
         findings += inspect_text(f"历史/{commit}/提交说明", message)

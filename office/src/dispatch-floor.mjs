@@ -91,10 +91,10 @@ function optionRows(decision, cols, ready, now) {
 
 function flightText(state, now) {
   const flight = state.flights.find((entry) => now >= entry.startedAt && now - entry.startedAt < entry.duration);
-  if (!flight) return '工程经理  ━━━━━━━━━━━  JEV  ━━━━━━━━━━━  执行工位';
+  if (!flight) return '执行协调  ━━━━━━━━━━━  JEV  ━━━━━━━━━━━  执行工位';
   const progress = Math.max(0, Math.min(1, (now - flight.startedAt) / flight.duration));
-  const left = flight.from === 'manager' ? '工程经理' : flight.from === 'worker' ? '执行工位' : 'JEV';
-  const right = flight.to === 'manager' ? '工程经理' : flight.to === 'worker' ? `执行工位 ${flight.target}` : 'JEV';
+  const left = flight.from === 'manager' ? '执行协调' : flight.from === 'worker' ? '执行工位' : 'JEV';
+  const right = flight.to === 'manager' ? '执行协调' : flight.to === 'worker' ? `执行工位 ${flight.target}` : 'JEV';
   const span = 30;
   const position = Math.round(progress * span);
   const tailStart = Math.max(0, position - 3);
@@ -109,7 +109,7 @@ export function renderDispatchFloor(state, workers, { cols = 120, now = Date.now
     for (const worker of workers || []) tally[worker.status] = (tally[worker.status] || 0) + 1;
     return [
       line([['AZIR ', C.jev, true], [`等你${tally.blocked} 工${tally.working} 完${tally.done} 不明${tally.unknown}`, C.muted], [` JEV${state.todayDecisions} ${dollars(state.todayCost)}`, C.pink]], cols),
-      line([['工程经理 · ', C.manager], [clean(state.managerText, cols - 13), C.ink]], cols),
+      line([['执行协调 · ', C.manager], [clean(state.managerText, cols - 13), C.ink]], cols),
       line([['JEV · ', C.jev], [state.lastDecision ? verdict(state.lastDecision) : '待判断', C.ink]], cols),
       line([['顾问 · ', C.advisor], [state.advisorCalls ? `${state.advisorCalls} 次调用` : '待命', C.ink]], cols),
     ];
@@ -140,7 +140,7 @@ export function renderDispatchFloor(state, workers, { cols = 120, now = Date.now
     return line(parts, cols);
   };
   rows.push(border('┌', '┬', '┐'));
-  rows.push(cardRow([['工程经理 · 主会话', C.manager, true], ['JEV 判断 · 分流', C.jev, true], ['顾问', C.advisor, true]]));
+  rows.push(cardRow([['执行协调', C.manager, true], ['JEV 判断 · 分流', C.jev, true], ['顾问', C.advisor, true]]));
   const adv = state.advisor && state.advisor.until > now;
   const jev = state.lastDecision;
   const jevStatus = jev && jev.bornAt != null && now < jev.readyAt ? '推理中…' : jev ? verdict(jev) : '待判断';

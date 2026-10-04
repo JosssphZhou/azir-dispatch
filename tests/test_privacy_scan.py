@@ -1,4 +1,5 @@
 import codecs
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -102,9 +103,24 @@ class PrivacyScanTests(unittest.TestCase):
             *args,
         ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    def scan(self, repo):
+    def scan(self, repo, extra_env=None):
+        env = {k: v for k, v in os.environ.items() if k != "AZIR_PRIVACY_EXTRA_AUTHORS"}
+        env.update(extra_env or {})
         return subprocess.run([sys.executable, str(SCANNER), str(repo)],
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
+
+    def test_extra_author_names_come_from_environment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            self.git(repo, "init", "-q", "-b", "main")
+            (repo / "note.txt").write_text("public text\n", encoding="utf-8")
+            self.git(repo, "add", ".")
+            self.git(repo, "-c", "user.name=Example Author", "commit", "-qm", "新增：样例")
+            blocked = self.scan(repo)
+            self.assertEqual(blocked.returncode, 1, blocked.stdout)
+            self.assertIn("[非公开署名]", blocked.stdout)
+            allowed = self.scan(repo, {"AZIR_PRIVACY_EXTRA_AUTHORS": "Other Name, Example Author"})
+            self.assertEqual(allowed.returncode, 0, allowed.stdout)
 
     def test_bom_exports_are_checked_in_worktree_and_history(self):
         encodings = [(codecs.BOM_UTF16_LE, "utf-16-le"), (codecs.BOM_UTF16_BE, "utf-16-be"),
@@ -136,7 +152,7 @@ class PrivacyScanTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             self.git(repo, "init", "-q", "-b", "main")
-            text = "\n".join(["public text", "周瑟夫", "noreply@anthropic.com", ""])
+            text = "\n".join(["public text", "noreply@anthropic.com", ""])
             for bom, encoding in [(codecs.BOM_UTF16_LE, "utf-16-le"), (codecs.BOM_UTF16_BE, "utf-16-be"),
                                   (codecs.BOM_UTF32_LE, "utf-32-le"), (codecs.BOM_UTF32_BE, "utf-32-be")]:
                 (repo / (encoding + ".txt")).write_bytes(bom + text.encode(encoding))

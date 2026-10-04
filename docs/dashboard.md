@@ -67,7 +67,7 @@ python3 -m azir_dispatch.dashboard --replay azir_dispatch/demo/video-run.jsonl
 
 ## herdr 办公室
 
-运行 `node office/office.mjs` 或 `bin/azir-dispatch office`，在 Herdr 工位上方显示工程经理、JEV 和顾问状态，并读取 azir 判断记录。默认只读。传入 `--enable-answers` 后启用原版批准和拒绝按键。传入 `--enable-actions` 后启用派发、雇用、交换工位、通知和标题修改。
+运行 `node office/office.mjs` 或 `bin/azir-dispatch office`，在 Herdr 工位上方显示执行协调、JEV 和顾问状态，并读取 azir 判断记录。默认只读。传入 `--enable-answers` 后启用原版批准和拒绝按键。传入 `--enable-actions` 后启用派发、雇用、交换工位、通知和标题修改。
 
 ## JEV 判断视图
 

@@ -84,9 +84,10 @@ else:
         path.write_text('version = 1\n' + text)
         return str(path)
 
-    def interactive(self, replies=None, interrupt=False, change_after_plan=None):
+    def interactive(self, replies=None, interrupt=False, change_after_plan=None, human=False):
         master, slave = pty.openpty()
-        process = subprocess.Popen([sys.executable, str(ROOT / 'bin/azir-dispatch'), 'setup'],
+        # A terminal prints a readable summary; these tests read the JSON result unless they ask for the summary.
+        process = subprocess.Popen([sys.executable, str(ROOT / 'bin/azir-dispatch'), 'setup', *([] if human else ['--json'])],
                                    cwd=self.work, env=self.env, stdin=slave, stdout=slave, stderr=slave)
         os.close(slave)
         output = b''

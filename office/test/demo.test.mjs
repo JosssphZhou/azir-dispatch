@@ -32,18 +32,18 @@ test('one demo lap follows the workflow: boss, main agent, manager, JEV four tim
   const hops = events.filter((e) => e.type === 'hop').map((e) => `${e.from}>${e.to}`);
   assert.deepEqual(hops, ['boss>main', 'main>manager', 'worker>review', 'review>manager', 'worker>review', 'review>manager', 'manager>main']);
   assert.equal(new Set(demoEvents(-1, DEMO_CYCLE_MS * 2, 0).map((e) => e.id)).size, events.length * 2);
-  // 演示里只允许出现 example-project 工程经理这个名字，不出现真实路径和工作区。
+  // 演示里只允许出现 example-project 执行协调这个名字，不出现真实路径和工作区。
   const text = (JSON.stringify(events) + JSON.stringify(demoAgents(0))).replaceAll('mgr-example-project', '');
   assert.doesNotMatch(text, /\/Users\/|\/Volumes\/|example-project|wDY/);
 });
 
 test('the demo floor shows the manager, JEV and all five model zones, and hides panes JEV never dispatched', () => {
   const plain = demoFrame(41_000).map(stripAnsi).join('\n');
-  for (const text of ['工程经理', 'JEV 判断', '6.1 Sol 区', 'Luna 区', 'Opus 区', 'Gemini 区', 'Grok 区', '每百万 $2.00 / $10.00',
+  for (const text of ['执行协调', 'JEV 判断', '6.1 Sol 区', 'Luna 区', 'Opus 区', 'Gemini 区', 'Grok 区', '每百万 $2.00 / $10.00',
     '统计文档行数', '写发布帖', 'JEV 93%', 'JEV 88%', 'JEV 91%', 'JEV 95%', '把握线 0.70']) {
     assert.ok(plain.includes(text), `缺少「${text}」`);
   }
-  assert.doesNotMatch(plain, /和老板对话|文档整理/);
+  assert.doesNotMatch(plain, /和你对话|文档整理/);
   const all = demoFrame(41_000, { cols: 140, showAll: true }).map(stripAnsi).join('\n');
   assert.match(all, /其他窗格 2 个/);
   assert.match(all, /其他窗格/);
@@ -51,14 +51,14 @@ test('the demo floor shows the manager, JEV and all five model zones, and hides 
 
 test('the 120x40 floor draws every layer of the workflow, and the reviewers light up in turn', () => {
   const plain = demoFrame(47_000).map(stripAnsi).join('\n');
-  for (const text of ['老板 · 周瑟夫', '主 Agent · 主对话', '顾问 · Fable', '协助审查', 'azir 工程经理', 'example-project 工程经理',
+  for (const text of [' 你 ', ' 主会话 ', '顾问 · Fable', '协助审查', 'azir 执行协调', 'example-project 执行协调',
     'JEV 判断', 'Sol 审查', 'Claude 审查', '录屏证明', '▀▀▀▀▀▀▀▀']) assert.ok(plain.includes(text), `缺少「${text}」`);
   assert.doesNotMatch(plain, /mgr-|review-/);
   assert.match(demoFrame(59_000).map(stripAnsi).join('\n'), /录屏证明[\s\S]*2 段/);
-  // 窄时老板一排和工程经理一排折成一行，审查排省掉。
+  // 窄时你一排和执行协调一排折成一行，审查排省掉。
   const narrow = demoFrame(47_000, { cols: 100, rows: 36 }).map(stripAnsi).join('\n');
-  assert.match(narrow, /老板 · 周瑟夫/);
-  assert.match(narrow, /azir 工程经理/);
+  assert.match(narrow, /▌你/);
+  assert.match(narrow, /azir 执行协调/);
   assert.doesNotMatch(narrow, /录屏证明/);
 });
 

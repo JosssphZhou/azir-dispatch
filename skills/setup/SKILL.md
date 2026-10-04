@@ -19,7 +19,7 @@ python3 bin/azir-dispatch doctor
 python3 bin/azir-dispatch doctor --json
 ```
 
-成功条件：doctor 退出 0，清单包含 claude、codex、cursor-agent、gemini、grok、agy、herdr、git、python3 和三个密钥变量。每项显示勾或叉，缺项旁有修复说明；JSON 的 `agents`、`keys` 为布尔值。状态写到 `$AZIR_DISPATCH_STATE_DIR/setup-state.json`，默认 `~/.local/state/azir-dispatch/setup-state.json`。
+成功条件：doctor 退出 0，清单包含 claude、codex、cursor-agent、gemini、grok、agy、herdr、git、python3 和三个密钥变量。必需项（python3、git、herdr、至少一个执行者 CLI）显示勾或叉，缺项旁有修复说明；可选项（三个密钥、顾问、多出来的执行者）显示灰色「可选」；JSON 的 `agents`、`keys` 为布尔值。状态写到 `$AZIR_DISPATCH_STATE_DIR/setup-state.json`，默认 `~/.local/state/azir-dispatch/setup-state.json`。
 
 没有 Python 3.11+ 时先检查 `python3.11`、`python3.12` 等入口，找到后替换本引导里的 `python3`；都没有则用系统包管理器安装。没有可用 agent 时先装一个再重跑 doctor。Grok 同时检查 PATH 和 `~/.grok/bin/grok`，后者需加入当前 shell 的 PATH：
 
@@ -59,18 +59,34 @@ python3 bin/azir-dispatch doctor --json
 
 ## 4. 选择角色和型号
 
-读取 doctor JSON 的 `roles`，展示 main 主会话、dev 开发、review 审查、research 调研、advisor 顾问的执行者、型号和降级情况。默认开发和审查首选 Codex GPT-6.1 Sol，主会话和前端首选 Claude Opus 5.5，顾问首选 GPT Pro。只有一个 CLI 时四个必需角色都退到它，Grok 和 AGy 默认沿用自身型号 `inherit`。缺 GPT Pro 时顾问为 `optional_unconfigured`，不阻止安装。
-
-角色格式见 [角色示例](../../examples/roles.example.toml)，可以通过答案中的 `roles` 覆盖；完整格式见 [配置说明](../../docs/setup.md)。用户已授权使用默认值时，用下面的非交互命令查看计划、保存，再验证映射：
+先用 `roles --json` 读取各角色的执行者、型号、状态，以及各 CLI 实际可选的型号列表（`available`）：
 
 ```sh
-printf '%s\n' '{"version":1,"jev":{"mode":"rules"}}' | python3 bin/azir-dispatch setup --answers-json -
-printf '%s\n' '{"version":1,"jev":{"mode":"rules"}}' | python3 bin/azir-dispatch setup --answers-json - --apply
+python3 bin/azir-dispatch roles --json
+```
+
+向用户展示 main 主会话、dev 开发、review 审查、research 调研、advisor 顾问各自用哪个执行者和型号，以及某个 CLI 没装时退到哪里（`using_fallback`、`fallback`）。要让用户亲自看画面，请他在自己的终端运行 `azir-dispatch roles`：画面能用方向键换执行者、`m` 选型号、`e` 选强度、`t` 做一次一句话的真实测试、`s` 保存。用户在画面里保存后，本步骤的配置就已写好。
+
+默认开发和审查首选 Codex，主会话和前端首选 Claude Code，顾问首选 GPT Pro。默认型号若不在对应 CLI 的型号列表里，会自动改成 `inherit`。只有一个 CLI 时四个必需角色都退到它；Grok 和 AGy 默认沿用自身型号 `inherit`。缺 GPT Pro 时顾问为 `optional`，不阻止安装。
+
+用户让你代为选择时，用 `--set` 改并保存，格式为 `角色=执行者:型号:强度`，可以重复多次；打印的是改了什么：
+
+```sh
+python3 bin/azir-dispatch roles --set dev=codex:gpt-6.1-sol:high --set review=claude:inherit:inherit
+```
+
+型号不在该 CLI 的列表里时 `--set` 会报错并列出可选型号，不写入。`t` 测试会花对方账号的一点额度，替用户测试前先问；测试结果会写进状态，下次 `roles --json` 里的 `status` 变成 `verified` 或 `failed`（`reason` 给出没登录、型号不存在、命令不存在等具体原因）。
+
+角色格式见 [角色示例](../../examples/roles.example.toml)，也可以通过答案中的 `roles` 覆盖；完整格式见 [配置说明](../../docs/setup.md)。保存其余配置（隐私规则、JEV 模式）并验证映射。agent 读取 JSON，所以每次都加 `--json`，否则在终端里会得到给人看的摘要：
+
+```sh
+printf '%s\n' '{"version":1,"jev":{"mode":"rules"}}' | python3 bin/azir-dispatch setup --answers-json - --json
+printf '%s\n' '{"version":1,"jev":{"mode":"rules"}}' | python3 bin/azir-dispatch setup --answers-json - --apply --json
 export AZIR_DISPATCH_CONFIG="$HOME/.config/azir-dispatch/config.toml"
 python3 bin/azir-dispatch doctor --config "$AZIR_DISPATCH_CONFIG" --json
 ```
 
-已有配置保留原候选和规则；重配置角色时把新 `roles` 明确写进答案。保存的角色表优先于 `dispatch.defaults`。型号不可用时将首选 model 和 effort 都改为 `inherit`，或填写用户已有型号，重新生成计划并保存。角色表的 `claude` 对应派发组合的适配器名 `claude-code`。
+已有配置保留原候选和规则，保存的角色表优先于 `dispatch.defaults`。型号不可用时用 `roles --set` 改成 `inherit`，或填写该 CLI 列表里的型号。角色表的 `claude` 对应派发组合的适配器名 `claude-code`。
 
 成功条件：`status=applied`、离线验证通过、`steps.models=ok`、角色映射符合用户选择。无 CLI 时 `steps.models=missing`，先安装登录一个 CLI，再执行。
 

@@ -14,6 +14,8 @@ from unittest.mock import patch
 
 from azir_dispatch import demo
 from azir_dispatch.roles import AGENTS, DEFAULT_ROLES
+
+KEY_NAMES = ('OPENROUTER_API_KEY', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY')
 from azir_dispatch.setup_config import toml_bytes
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,7 +81,15 @@ class DoctorTests(unittest.TestCase):
                 self.assertEqual(human.returncode, 0)
                 self.assertNotIn('\x1b[', human.stdout)
                 for name in AGENTS:
-                    self.assertIn(('✓' if name in present else '✗') + ' ' + name, human.stdout)
+                    # One installed agent CLI is enough: the rest are optional and only red when none exists.
+                    mark = '✓' if name in present else '–' if present else '✗'
+                    self.assertIn(mark + ' ' + name, human.stdout)
+                self.assertIn('azir-dispatch roles', human.stdout)
+                self.assertEqual('✗ herdr' in human.stdout, True)
+                for name in KEY_NAMES:
+                    self.assertIn('– ' + name + '  optional', human.stdout)
+                self.assertNotIn('✗ OPENROUTER_API_KEY', human.stdout)
+                self.assertIn('– advisor  optional', human.stdout)
 
     def test_state_under_an_ancestor_alias_uses_the_real_directory(self):
         alias = self.work / 'alias'

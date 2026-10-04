@@ -57,7 +57,7 @@ class StandbyTests(unittest.TestCase):
             self.assertIn(text, frame.text)
         tier_rows = [row for row in frame.text.splitlines() if row.startswith("› ")]
         self.assertEqual(len(tier_rows), 5)
-        self.assertNotIn("工程经理", frame.text)
+        self.assertNotIn("执行协调", frame.text)
         self.assertNotIn("codex-cli:", frame.text)
         # The herdr pane border already reads "JEV 判断"; the body must not repeat it.
         self.assertNotIn("JEV 判断", frame.text)
@@ -109,7 +109,7 @@ class StandbyTests(unittest.TestCase):
             self.assertIn("空闲 5 / 5", frame.text)
             self.assertNotIn("%", frame.text)
             self.assertNotIn("等待任务书", frame.text)
-            self.assertNotIn("工程经理", frame.text)
+            self.assertNotIn("执行协调", frame.text)
             self.assertTrue(fits(frame))
 
 class AgentIconTests(unittest.TestCase):

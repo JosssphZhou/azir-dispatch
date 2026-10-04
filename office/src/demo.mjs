@@ -1,9 +1,9 @@
 // 录屏演示用的虚构内容。这里不读路径、判断记录或任何接口。
 //
-// 一轮 61 秒，按示例协作流程走：老板一句话 → 主 Agent 写任务书交给 azir 工程经理 →
-// 工程经理派发前问 JEV，JEV 每次转一次老虎机：统计文档给 Luna，重构代码给 6.1 Sol，
+// 一轮 61 秒，按一次完整的流程走：你一句话 → 主会话写任务书交给 azir 执行协调 →
+// 执行协调派发前问 JEV，JEV 每次转一次老虎机：统计文档给 Luna，重构代码给 6.1 Sol，
 // 写发布帖给 Gemini，查 X 帖子给 Grok → 执行者干活 → 统计那件由 JEV 直接收尾；重构那件由 Sol 审查，
-// 开场前就在做的看板界面由 Claude 看截图 → 回到工程经理 → 主 Agent 合并、推送。
+// 开场前就在做的看板界面由 Claude 看截图 → 回到执行协调 → 主会话合并、推送。
 export const DEMO_CYCLE_MS = 61_000;
 
 const LUNA = 'codex-cli:gpt-6-luna:medium';
@@ -18,7 +18,7 @@ const OPTIONS = {
   [GEMINI]: '中文写作和润色',
   [GROK]: '联网搜索和 X 帖子',
 };
-const WRAPUP = { close_keep: '关闭窗格、保留结果', keep: '交回工程经理' };
+const WRAPUP = { close_keep: '关闭窗格、保留结果', keep: '交回执行协调' };
 
 // 选中项拿 confidence，其余按固定比例分剩下的概率。
 const SHARE = { [SOL]: 0.35, [LUNA]: 0.25, [OPUS]: 0.2, [GEMINI]: 0.12, [GROK]: 0.08 };
@@ -86,7 +86,7 @@ const schedule = [
     status: 'done', flightMs: 2000, say: { review1: '看截图' } }),
   hop(AT.uiBack, 'review', 'manager', { task: UI.task, zone: 'opus', reviewer: 1, target: UI.target, run_id: UI.run,
     result: '截图通过', flightMs: 2600, manager_text: '截图通过：数据看板界面', say: { review1: '通过' } }),
-  hop(AT.merge, 'manager', 'main', { task: '4 件完成', flightMs: 1800, manager_text: '交给主 Agent 合并', say: { main: '合并、推送' } }),
+  hop(AT.merge, 'manager', 'main', { task: '4 件完成', flightMs: 1800, manager_text: '交给主会话合并', say: { main: '合并、推送' } }),
 ].sort((a, b) => a.at - b.at);
 
 // 开场前已经在做的前端任务，不播放派发动画，只让 Opus 区有一张工位卡。
@@ -127,7 +127,7 @@ export function demoAgents(elapsedMs) {
     ['mgr-example-project', 'claude', 'idle', '空闲'],
     ['review-sol', 'codex', state(AT.solReview, AT.solBack + 2.6), '审查代码'],
     ['review-claude', 'claude', state(AT.uiReview, AT.uiBack + 2.6), '看截图'],
-    ['主对话', 'claude', 'idle', '和老板对话'],
+    ['主对话', 'claude', 'idle', '和你对话'],
     ['文档整理', 'claude', 'working', '整理会议纪要'],
   ];
   return rows.map(([name, agent, status, title], i) => ({
