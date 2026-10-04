@@ -4,7 +4,7 @@ azir-dispatch 是多 agent 调度工具：选择执行者、记录派发结果�
 
 把这句话交给你的 Claude Code、Codex、Grok 或 AGy：
 
-> 照这个仓库的 `skills/setup/SKILL.md` 引导装好并跑一次派发：<仓库地址或本地路径>
+> 照这个仓库的 `skills/setup/SKILL.md` 引导装好并跑一次派发：https://github.com/JosssphZhou/azir-dispatch
 
 这条引导已经让 Codex 和 Grok 在全新的环境里从零装好并跑通一次派发。AGy 还没验证。
 
